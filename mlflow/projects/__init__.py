@@ -75,6 +75,21 @@ def _resolve_experiment_id(experiment_name=None, experiment_id=None):
     return exp_id
 
 
+def _resolve_cluster_spec(backend_config):
+    if (backend_config and type(backend_config) != dict
+            and os.path.splitext(backend_config)[-1] == ".json"):
+        with open(backend_config, 'r') as handle:
+            try:
+                cluster_spec_dict = json.load(handle)
+                return cluster_spec_dict
+            except ValueError:
+                _logger.error(
+                    "Error when attempting to load and parse JSON cluster spec from file %s",
+                    backend_config)
+                raise
+    return backend_config
+
+
 def _run(uri, experiment_id, entry_point="main", version=None, parameters=None,
          backend=None, backend_config=None, use_conda=True,
          storage_dir=None, synchronous=True, run_id=None):
@@ -242,17 +257,7 @@ def run(uri, entry_point="main", version=None, parameters=None,
              about the launched run.
     """
 
-    cluster_spec_dict = backend_config
-    if (backend_config and type(backend_config) != dict
-            and os.path.splitext(backend_config)[-1] == ".json"):
-        with open(backend_config, 'r') as handle:
-            try:
-                cluster_spec_dict = json.load(handle)
-            except ValueError:
-                _logger.error(
-                    "Error when attempting to load and parse JSON cluster spec from file %s",
-                    backend_config)
-                raise
+    cluster_spec_dict = _resolve_cluster_spec(backend_config)
 
     if backend == "databricks":
         mlflow.projects.databricks.before_run_validations(mlflow.get_tracking_uri(), backend_config)
