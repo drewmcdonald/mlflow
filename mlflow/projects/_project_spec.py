@@ -29,12 +29,15 @@ def load_project(directory):
     project_name = yaml_obj.get("name")
     conda_path = yaml_obj.get("conda_env")
     docker_env = yaml_obj.get("docker_env")
+    project_default_experiment = yaml_obj.get("default_experiment")
     entry_points = {}
 
     for name, entry_point_yaml in yaml_obj.get("entry_points", {}).items():
         parameters = entry_point_yaml.get("parameters", {})
         command = entry_point_yaml.get("command")
-        entry_points[name] = EntryPoint(name, parameters, command)
+        entry_point_default_experiment = entry_point_yaml.get("default_experiment",
+                                                              project_default_experiment)
+        entry_points[name] = EntryPoint(name, parameters, command, entry_point_default_experiment)
 
     if conda_path:
         conda_env_path = os.path.join(directory, conda_path)
@@ -80,10 +83,11 @@ class Project(object):
 
 class EntryPoint(object):
     """An entry point in an MLproject specification."""
-    def __init__(self, name, parameters, command):
+    def __init__(self, name, parameters, command, default_experiment=None):
         self.name = name
         self.parameters = {k: Parameter(k, v) for (k, v) in parameters.items()}
         self.command = command
+        self.default_experiment = default_experiment
 
     def _validate_parameters(self, user_parameters):
         missing_params = []

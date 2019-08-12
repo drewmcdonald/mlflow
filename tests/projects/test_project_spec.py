@@ -144,6 +144,23 @@ bad_ml_project_file_test_cases = (
             """,
         )
     ),
+    # default experiment is a single item string/int
+    (
+        "must be a single string",
+        (
+            """
+            entry_points:
+              ep:
+                command: pass
+                default_experiment:
+                  blah: blah
+            """,
+            """
+            default_experiment:
+              blah: blah
+            """
+        )
+    ),
     # docker env has only a string image entry
     (
         "must have an 'image' entry",

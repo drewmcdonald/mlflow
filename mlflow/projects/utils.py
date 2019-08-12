@@ -16,7 +16,8 @@ def validate_conda_env_path(path):
 
 def validate_project_yaml(project_yaml):
     """validate the yaml in an MLproject file"""
-    project_allowed_entries = ('name', 'conda_env', 'docker_env', 'entry_points')
+    project_allowed_entries = ('name', 'conda_env', 'docker_env',
+                               'entry_points', 'default_experiment')
 
     project_entries = project_yaml.keys()
 
@@ -40,6 +41,13 @@ def validate_project_yaml(project_yaml):
         for name, entry_point in project_yaml.get('entry_points').items():
             _validate_entry_point_yaml(name, entry_point)
 
+    if 'default_experiment' in project_entries:
+        if not isinstance(project_yaml.get('default_experiment'), str):
+            bad_default_experiment_message = (
+                "project-level default experiment must be a single string"
+            )
+            raise ExecutionException(BAD_MLPROJECT_MESSAGE.format(bad_default_experiment_message))
+
 
 def _validate_entries_are_allowed(yaml_level, present_entries, allowed_entries):
     """helper to validate that entry keys are in an allowable set"""
@@ -52,7 +60,7 @@ def _validate_entries_are_allowed(yaml_level, present_entries, allowed_entries):
 
 def _validate_entry_point_yaml(entry_point_name, entry_point_yaml):
     """helper to validate entry point yaml"""
-    entry_point_allowed_entries = ('parameters', 'command')
+    entry_point_allowed_entries = ('parameters', 'command', 'default_experiment')
 
     entry_point_entries = entry_point_yaml.keys()
     _validate_entries_are_allowed('entry point', entry_point_entries, entry_point_allowed_entries)
@@ -64,6 +72,13 @@ def _validate_entry_point_yaml(entry_point_name, entry_point_yaml):
     if 'parameters' in entry_point_entries:
         for parameter_name, parameter_yaml in entry_point_yaml.get('parameters').items():
             _validate_entry_point_parameter_yaml(entry_point_name, parameter_name, parameter_yaml)
+
+    if 'default_experiment' in entry_point_entries:
+        if not isinstance(entry_point_yaml.get('default_experiment'), str):
+            bad_default_experiment_message = (
+                "default experiment of entry point {} must be a single string"
+            ).format(entry_point_name)
+            raise ExecutionException(BAD_MLPROJECT_MESSAGE.format(bad_default_experiment_message))
 
 
 def _validate_entry_point_parameter_yaml(entry_point_name, parameter_name, parameter_yaml):
