@@ -53,7 +53,9 @@ _MLFLOW_DOCKER_TRACKING_DIR_PATH = "/mlflow/tmp/mlruns"
 _logger = logging.getLogger(__name__)
 
 
-def _resolve_experiment_id(experiment_name=None, experiment_id=None):
+def _resolve_experiment_id(entry_point_default_experiment=None,
+                           passed_experiment_name=None,
+                           passed_experiment_id=None):
     """
     Resolve experiment.
 
@@ -62,15 +64,19 @@ def _resolve_experiment_id(experiment_name=None, experiment_id=None):
     If experiment_name is provided and does not exist, an experiment
     of that name is created and its id is returned.
 
-    :param experiment_name: Name of experiment under which to launch the run.
-    :param experiment_id: ID of experiment under which to launch the run.
+    :param entry_point_default_experiment: Name of default experiment derived from MLproject file
+    :param passed_experiment_name: Name of experiment under which to launch the run.
+    :param passed_experiment_id: ID of experiment under which to launch the run.
     :return: int
     """
 
-    if experiment_name and experiment_id:
+    if passed_experiment_name and passed_experiment_id:
         raise MlflowException("Specify only one of 'experiment_name' or 'experiment_id'.")
 
-    exp_id = experiment_id
+    if passed_experiment_id:
+        return passed_experiment_id
+
+    experiment_name = passed_experiment_name or entry_point_default_experiment
     if experiment_name:
         client = tracking.MlflowClient()
         exp = client.get_experiment_by_name(experiment_name)
@@ -79,7 +85,7 @@ def _resolve_experiment_id(experiment_name=None, experiment_id=None):
         else:
             print("INFO: '{}' does not exist. Creating a new experiment".format(experiment_name))
             return client.create_experiment(experiment_name)
-    return exp_id or _get_experiment_id()
+    return _get_experiment_id()
 
 
 def _resolve_cluster_spec(backend_config):
@@ -269,8 +275,14 @@ def run(uri, entry_point="main", version=None, parameters=None,
     if backend == "databricks":
         mlflow.projects.databricks.before_run_validations(mlflow.get_tracking_uri(), backend_config)
 
-    experiment_id = _resolve_experiment_id(experiment_name=experiment_name,
-                                           experiment_id=experiment_id)
+    work_dir = _fetch_project(uri=uri, force_tempdir=False, version=version)
+    project = _project_spec.load_project(work_dir)
+
+    experiment_id = _resolve_experiment_id(
+        entry_point_default_experiment=project.get_entry_point(entry_point).default_experiment,
+        passed_experiment_name=experiment_name,
+        passed_experiment_id=experiment_id
+    )
 
     submitted_run_obj = _run(
         uri=uri, experiment_id=experiment_id, entry_point=entry_point, version=version,

@@ -252,16 +252,16 @@ def test_resolve_experiment_id(experiment_id, experiment_name, expected):
                                                               artifact_location=None,
                                                               lifecycle_stage=None)
 
-        exp_id = mlflow.projects._resolve_experiment_id(experiment_name=experiment_name,
-                                                        experiment_id=experiment_id)
+        exp_id = mlflow.projects._resolve_experiment_id(passed_experiment_name=experiment_name,
+                                                        passed_experiment_id=experiment_id)
         assert exp_id == expected
 
 
 def test_resolve_experiment_id_should_not_allow_both_name_and_id_in_use():
     with pytest.raises(MlflowException,
                        match="Specify only one of 'experiment_name' or 'experiment_id'."):
-        _ = mlflow.projects._resolve_experiment_id(experiment_name='experiment_named',
-                                                   experiment_id="44")
+        _ = mlflow.projects._resolve_experiment_id(passed_experiment_name='experiment_named',
+                                                   passed_experiment_id="44")
 
 
 def test_invalid_version_local_git_repo(local_git_repo_uri,
