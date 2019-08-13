@@ -14,6 +14,8 @@ def test_project_get_entry_point():
     entry_point = project.get_entry_point("greeter")
     assert entry_point.name == "greeter"
     assert entry_point.command == "python greeter.py {greeting} {name}"
+    # Check default experiment
+    assert entry_point.default_experiment == "some experiment"
     # Validate parameters
     assert set(entry_point.parameters.keys()) == set(["name", "greeting"])
     name_param = entry_point.parameters["name"]
@@ -30,6 +32,8 @@ def test_project_get_unspecified_entry_point():
     entry_point = project.get_entry_point("my_script.py")
     assert entry_point.name == "my_script.py"
     assert entry_point.command == "python my_script.py"
+    # unspecified entry point gets the project default experiment
+    assert entry_point.default_experiment == "blah experiment"
     assert entry_point.parameters == {}
     entry_point = project.get_entry_point("my_script.sh")
     assert entry_point.name == "my_script.sh"
@@ -140,6 +144,19 @@ bad_ml_project_file_test_cases = (
               ep:
                 parameters:
                   p: {default: 1}
+                command: pass
+            """,
+        )
+    ),
+    # entry point has non-string default experiment
+    (
+        "default experiment of entry point ep must be a single string",
+        (
+            """
+            entry_points:
+              ep:
+                default_experiment:
+                  blah: blah
                 command: pass
             """,
         )

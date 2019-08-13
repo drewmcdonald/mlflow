@@ -43,24 +43,28 @@ def load_project(directory):
         conda_env_path = os.path.join(directory, conda_path)
         validate_conda_env_path(conda_env_path)
         return Project(conda_env_path=conda_env_path, entry_points=entry_points,
-                       docker_env=docker_env, name=project_name,)
+                       docker_env=docker_env, name=project_name,
+                       default_experiment=project_default_experiment)
 
     default_conda_path = os.path.join(directory, DEFAULT_CONDA_FILE_NAME)
     if os.path.exists(default_conda_path):
         return Project(conda_env_path=default_conda_path, entry_points=entry_points,
-                       docker_env=docker_env, name=project_name)
+                       docker_env=docker_env, name=project_name,
+                       default_experiment=project_default_experiment)
 
     return Project(conda_env_path=None, entry_points=entry_points,
-                   docker_env=docker_env, name=project_name)
+                   docker_env=docker_env, name=project_name,
+                   default_experiment=project_default_experiment)
 
 
 class Project(object):
     """A project specification loaded from an MLproject file in the passed-in directory."""
-    def __init__(self, conda_env_path, entry_points, docker_env, name):
+    def __init__(self, conda_env_path, entry_points, docker_env, name, default_experiment):
         self.conda_env_path = conda_env_path
         self._entry_points = entry_points
         self.docker_env = docker_env
         self.name = name
+        self.default_experiment = default_experiment
 
     def get_entry_point(self, entry_point):
         if entry_point in self._entry_points:
@@ -71,10 +75,12 @@ class Project(object):
             command = "%s %s" % (ext_to_cmd[file_extension], shlex_quote(entry_point))
             if type(command) not in six.string_types:
                 command = command.encode("utf-8")
-            return EntryPoint(name=entry_point, parameters={}, command=command)
+            return EntryPoint(name=entry_point, parameters={}, command=command,
+                              default_experiment=self.default_experiment)
         elif file_extension == ".R":
             command = "Rscript -e \"mlflow::mlflow_source('%s')\" --args" % shlex_quote(entry_point)
-            return EntryPoint(name=entry_point, parameters={}, command=command)
+            return EntryPoint(name=entry_point, parameters={}, command=command,
+                              default_experiment=self.default_experiment)
         raise ExecutionException("Could not find {0} among entry points {1} or interpret {0} as a "
                                  "runnable script. Supported script file extensions: "
                                  "{2}".format(entry_point, list(self._entry_points.keys()),

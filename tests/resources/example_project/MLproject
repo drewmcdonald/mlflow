@@ -1,14 +1,19 @@
 conda_env: conda.yaml
 
+default_experiment: 'blah experiment'
+
 entry_points:
   main:
+    default_experiment: 'Default'
     command: "echo 'Main entry point'"
   greeter:
+    default_experiment: 'some experiment'
     parameters:
       greeting: {type: string, default: "hi"}
       name: string
     command: "python greeter.py {greeting} {name}"
   line_count:
+    default_experiment: 'another new experiment'
     parameters:
       path: path
     command: "cat {path} | wc -l"
